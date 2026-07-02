@@ -1,0 +1,23 @@
+.campo-inativo-subtarefa {
+    opacity: 0.45 !important;
+    background: #f5f5f5 !important;
+}
+
+.campo-inativo-subtarefa input,
+.campo-inativo-subtarefa select,
+.campo-inativo-subtarefa textarea {
+    pointer-events: none;
+}
+
+.campo-inativo-subtarefa .help,
+.campo-inativo-subtarefa label {
+    cursor: default;
+}
+
+.form-row input:disabled,
+.form-row select:disabled,
+.form-row textarea:disabled {
+    opacity: 0.55;
+    background: #eeeeee;
+    cursor: not-allowed;
+}

@@ -49,7 +49,13 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 - Departamentos.
 - Tipos de tarefa.
 - Cadastro de tarefas.
+- Tarefas principais e subtarefas.
+- Data interna de execucao para tarefas principais.
+- Alerta por antecedencia para execucao interna.
+- Baixa/conclusao feita pelas subtarefas.
 - Vencimentos e periodicidades.
+- Ajuste de vencimento em dia nao util.
+- Dias de antecedencia para alerta.
 - Vinculo entre empresas e tarefas.
 - Planos de tarefas por tipo de tributacao.
 - Conclusao e reabertura de tarefas.
@@ -120,6 +126,13 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 - Empresa vinculada opcionalmente a um Plano de Tarefas.
 - Model `EmpresaTarefaAjuste` criado.
 - Ajuste individual de tarefas por empresa registrado no admin do Django.
+- Campos `ajuste_dia_nao_util` e `dias_antecedencia_alerta` adicionados em Tarefa.
+- Campos de tarefa principal, subtarefas e execucao interna adicionados em Tarefa.
+- Regra definida: tarefas principais nao devem ser baixadas diretamente; subtarefas devem ser baixadas individualmente.
+- Model `OcorrenciaTarefa` criado.
+- Ocorrencias de tarefas registradas no admin do Django.
+- Status gravados definidos: Pendente, Concluida e Cancelada.
+- Status Atrasada definido como calculado automaticamente pelo sistema.
 
 ## 10. Estrutura geral do Django
 
@@ -140,6 +153,35 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 - View: parte que recebe uma requisicao e devolve uma resposta.
 - Template: arquivo HTML usado para montar telas.
 - URL: endereco que leva para uma tela ou funcao do sistema.
+- Tarefa principal: agrupa subtarefas e controla a execucao interna.
+- Subtarefa: representa cada entrega ou obrigacao que pode ser baixada pelo usuario.
+- Tarefa simples: tarefa que nao tem subtarefas e pode ser executada sozinha.
+- O cadastro de tarefa possui o campo Natureza, com as opcoes Tarefa principal, Tarefa simples e Subtarefa.
+
+## 11.1 Regras importantes de tarefas
+
+- Uma tarefa principal nao deve ser baixada diretamente.
+- A baixa/conclusao deve acontecer nas subtarefas.
+- Uma subtarefa pode ser baixada individualmente pelo usuario.
+- Uma tarefa principal deve ser considerada concluida somente quando todas as suas subtarefas estiverem concluidas.
+- Uma tarefa sem subtarefas podera ser baixada diretamente.
+- O plano de tarefas deve receber tarefas principais ou tarefas simples.
+- Subtarefas nao devem ser adicionadas diretamente ao plano; elas entram no plano por meio da tarefa principal.
+- Ajustes individuais por empresa poderao adicionar ou remover tarefas especificas, inclusive subtarefas, quando for necessario tratar uma excecao.
+- Ao editar uma subtarefa no admin, os campos de execucao interna devem ficar visualmente inativos.
+- Tarefa simples e subtarefa nao podem controlar execucao interna; essa regra pertence a tarefa principal.
+- O campo Tarefa principal deve listar apenas tarefas cadastradas como Tarefa principal.
+- Uma subtarefa so pode ser vinculada a uma tarefa principal do mesmo departamento.
+- No admin, ao escolher o departamento da subtarefa, o campo Tarefa principal deve mostrar apenas tarefas principais daquele departamento.
+- Para tarefas principais, o grupo principal de datas e o Prazo interno de execucao.
+- Para tarefas simples e subtarefas, o grupo principal de datas e o Vencimento oficial da tarefa.
+- Os campos de mes da competencia devem ser exibidos como opcoes simples, de Na propria competencia ate Doze meses depois.
+- Essa regra permite cadastrar obrigacoes anuais que vencem no ano seguinte, como ECD e ECF.
+- A ocorrencia de tarefa representa uma tarefa real de uma empresa em uma competencia.
+- O cadastro de tarefa guarda a regra; a ocorrencia guarda o que precisa ser executado naquele periodo.
+- Atrasada nao deve ser marcada manualmente; o sistema calcula quando a ocorrencia esta pendente e passou da data de referencia.
+- Para tarefa principal, a data de referencia da ocorrencia e a data de execucao interna.
+- Para tarefa simples ou subtarefa, a data de referencia da ocorrencia e a data de vencimento oficial.
 
 ## 12. Ordem recomendada de implantacao
 
@@ -163,14 +205,17 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 18. Vincular tarefas aos planos.
 19. Vincular empresa a um plano de tarefas.
 20. Criar ajustes individuais de tarefas por empresa.
+21. Criar tarefas principais e subtarefas.
+22. Configurar execucao interna das tarefas principais.
+23. Criar ocorrencias de tarefas por competencia.
+24. Criar controle de baixa/conclusao das subtarefas.
+25. Criar reabertura de ocorrencias concluidas.
 
 ## 13. Proximo passo atual
 
-- Testar o cadastro de planos de tarefas pelo admin.
-- Criar o plano padrao do Simples Nacional.
-- Vincular tarefas ao plano.
-- Abrir o cadastro da empresa e selecionar o plano de tarefas.
-- Testar ajuste individual adicionando ou removendo uma tarefa para uma empresa.
+- Criar a logica que calcula datas de execucao, vencimento e alerta.
+- Criar uma forma de gerar ocorrencias de tarefas por empresa e competencia.
+- Testar ocorrencias geradas para tarefa principal, tarefa simples e subtarefa.
 
 ## 14. Regra de estudo
 
