@@ -1,6 +1,25 @@
 from django.db import models
 
 
+class Organizacao(models.Model):
+    nome = models.CharField(max_length=150)
+    documento = models.CharField(max_length=18, blank=True)
+    email = models.EmailField(max_length=150, blank=True)
+    telefone_whatsapp = models.CharField(max_length=20, blank=True)
+    ativa = models.BooleanField(default=True)
+    observacao = models.TextField(blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['nome']
+        verbose_name = 'Organizacao'
+        verbose_name_plural = 'Organizacoes'
+
+    def __str__(self):
+        return self.nome
+
+
 class Empresa(models.Model):
     class Tributacao(models.TextChoices):
         SIMPLES_NACIONAL = 'SIMPLES_NACIONAL', 'Simples Nacional'
@@ -9,6 +28,11 @@ class Empresa(models.Model):
         MEI = 'MEI', 'MEI'
         PF = 'PF', 'PF'
 
+    organizacao = models.ForeignKey(
+        Organizacao,
+        on_delete=models.PROTECT,
+        related_name='empresas',
+    )
     nome = models.CharField(max_length=150)
     cnpj = models.CharField(max_length=18, unique=True)
     logradouro = models.CharField(max_length=150)

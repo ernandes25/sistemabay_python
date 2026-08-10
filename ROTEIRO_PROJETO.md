@@ -23,6 +23,7 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 ## 3. Modulos previstos
 
 - Base do sistema
+- Organizacoes
 - Empresas
 - Usuarios
 - Departamentos
@@ -43,6 +44,8 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 - Tributacao: Simples Nacional, Lucro Presumido, Lucro Real, MEI ou PF.
 - Observacao.
 - A tributacao devera ajudar na escolha do plano de tarefas.
+- Cada empresa pertence a uma Organizacao.
+- No futuro, a Organizacao representara cada escritorio ou cliente que usa o sistema.
 
 ## 5. Modulo tarefas
 
@@ -103,10 +106,14 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 - Django configurado para usar PostgreSQL.
 - Migracoes iniciais do Django aplicadas no PostgreSQL.
 - App `empresas` criado e registrado.
+- Model `Organizacao` criado.
 - Model `Empresa` criado.
 - Migration inicial de empresas criada e aplicada.
 - Campo `complemento` adicionado em Empresa.
 - Empresa registrada no admin do Django.
+- Organizacao registrada no admin do Django.
+- Organizacao padrao `Bay Software` criada.
+- Empresas existentes vinculadas a Organizacao padrao.
 - Superusuario do Django criado.
 - Cadastro de empresas testado pelo admin.
 - App `tarefas` criado e registrado.
@@ -153,6 +160,7 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 - View: parte que recebe uma requisicao e devolve uma resposta.
 - Template: arquivo HTML usado para montar telas.
 - URL: endereco que leva para uma tela ou funcao do sistema.
+- Organizacao: representa o dono dos dados. Hoje sera usada para o proprio escritorio; no futuro permitira separar os dados de varios clientes do sistema.
 - Tarefa principal: agrupa subtarefas e controla a execucao interna.
 - Subtarefa: representa cada entrega ou obrigacao que pode ser baixada pelo usuario.
 - Tarefa simples: tarefa que nao tem subtarefas e pode ser executada sozinha.
@@ -191,25 +199,26 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 4. Aplicar migracoes iniciais.
 5. Criar o app `empresas`.
 6. Registrar o app no Django.
-7. Criar o model `Empresa`.
-8. Criar as migrations de empresas.
-9. Aplicar as migrations no banco.
-10. Registrar Empresa no admin.
-11. Criar superusuario do Django.
-12. Testar cadastro de empresas pelo admin.
-13. Criar o app `tarefas`.
-14. Criar o model `Departamento`.
-15. Criar o cadastro de tipos de tarefa.
-16. Criar o cadastro basico de tarefas.
-17. Criar o cadastro de planos de tarefas.
-18. Vincular tarefas aos planos.
-19. Vincular empresa a um plano de tarefas.
-20. Criar ajustes individuais de tarefas por empresa.
-21. Criar tarefas principais e subtarefas.
-22. Configurar execucao interna das tarefas principais.
-23. Criar ocorrencias de tarefas por competencia.
-24. Criar controle de baixa/conclusao das subtarefas.
-25. Criar reabertura de ocorrencias concluidas.
+7. Criar o model `Organizacao`.
+8. Criar o model `Empresa`.
+9. Criar as migrations de empresas.
+10. Aplicar as migrations no banco.
+11. Registrar Organizacao e Empresa no admin.
+12. Criar superusuario do Django.
+13. Testar cadastro de empresas pelo admin.
+14. Criar o app `tarefas`.
+15. Criar o model `Departamento`.
+16. Criar o cadastro de tipos de tarefa.
+17. Criar o cadastro basico de tarefas.
+18. Criar o cadastro de planos de tarefas.
+19. Vincular tarefas aos planos.
+20. Vincular empresa a um plano de tarefas.
+21. Criar ajustes individuais de tarefas por empresa.
+22. Criar tarefas principais e subtarefas.
+23. Configurar execucao interna das tarefas principais.
+24. Criar ocorrencias de tarefas por competencia.
+25. Criar controle de baixa/conclusao das subtarefas.
+26. Criar reabertura de ocorrencias concluidas.
 
 ## 13. Proximo passo atual
 
