@@ -3,11 +3,17 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils import timezone
-from empresas.models import Empresa
+
+from empresas.models import Empresa, Organizacao
 
 
 class Departamento(models.Model):
-    nome = models.CharField(max_length=100, unique=True)
+    organizacao = models.ForeignKey(
+        Organizacao,
+        on_delete=models.PROTECT,
+        related_name='departamentos',
+    )
+    nome = models.CharField(max_length=100)
     descricao = models.TextField(blank=True)
     ativo = models.BooleanField(default=True)
     criado_em = models.DateTimeField(auto_now_add=True)
@@ -17,6 +23,12 @@ class Departamento(models.Model):
         ordering = ['nome']
         verbose_name = 'Departamento'
         verbose_name_plural = 'Departamentos'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organizacao', 'nome'],
+                name='unique_departamento_por_organizacao',
+            ),
+        ]
 
     def __str__(self):
         return self.nome

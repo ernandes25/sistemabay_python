@@ -68,13 +68,14 @@ class TarefaAdminForm(forms.ModelForm):
 
 @admin.register(Departamento)
 class DepartamentoAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'ativo']
-    search_fields = ['nome']
-    list_filter = ['ativo']
+    list_display = ['organizacao', 'nome', 'ativo']
+    list_display_links = ['nome']
+    search_fields = ['organizacao__nome', 'nome']
+    list_filter = ['organizacao', 'ativo']
     readonly_fields = ['criado_em', 'atualizado_em']
     fieldsets = [
         ('Dados principais', {
-            'fields': ['nome', 'descricao', 'ativo']
+            'fields': ['organizacao', 'nome', 'descricao', 'ativo']
         }),
         ('Controle', {
             'fields': ['criado_em', 'atualizado_em']
