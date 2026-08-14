@@ -224,6 +224,11 @@ class Tarefa(models.Model):
 
 
 class PlanoTarefa(models.Model):
+    organizacao = models.ForeignKey(
+        Organizacao,
+        on_delete=models.PROTECT,
+        related_name='planos_tarefas',
+    )
     nome = models.CharField(max_length=150)
     tributacao = models.CharField(max_length=20, choices=Empresa.Tributacao.choices)
     descricao = models.TextField(blank=True)
@@ -247,13 +252,14 @@ class PlanoTarefa(models.Model):
     def clean(self):
         if self.padrao:
             plano_padrao = PlanoTarefa.objects.filter(
+                organizacao=self.organizacao,
                 tributacao=self.tributacao,
                 padrao=True,
             ).exclude(pk=self.pk)
 
             if plano_padrao.exists():
                 raise ValidationError({
-                    'padrao': 'Ja existe um plano padrao para esta tributacao.'
+                    'padrao': 'Já existe um plano padrão para esta tributação nesta organização.'
                 })
 
     def __str__(self):
@@ -280,6 +286,12 @@ class PlanoTarefaItem(models.Model):
         ]
 
     def clean(self):
+        if self.plano_id and self.tarefa_id:
+            if self.plano.organizacao_id != self.tarefa.departamento.organizacao_id:
+                raise ValidationError({
+                    'tarefa': 'A tarefa deve pertencer à mesma organização do plano.'
+                })
+
         if self.tarefa_id and self.tarefa.natureza == Tarefa.Natureza.SUBTAREFA:
             raise ValidationError({
                 'tarefa': 'Subtarefas nao devem ser adicionadas diretamente ao plano. Adicione a tarefa principal.'

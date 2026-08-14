@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -59,6 +60,13 @@ class Empresa(models.Model):
         ordering = ['nome']
         verbose_name = 'Empresa'
         verbose_name_plural = 'Empresas'
+
+    def clean(self):
+        if self.organizacao_id and self.plano_tarefas_id:
+            if self.organizacao_id != self.plano_tarefas.organizacao_id:
+                raise ValidationError({
+                    'plano_tarefas': 'O plano de tarefas deve pertencer à mesma organização da empresa.'
+                })
 
     def __str__(self):
         return self.nome

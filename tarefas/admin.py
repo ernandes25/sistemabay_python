@@ -196,14 +196,15 @@ class PlanoTarefaItemInline(admin.TabularInline):
 
 @admin.register(PlanoTarefa)
 class PlanoTarefaAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'tributacao', 'padrao', 'ativo']
-    search_fields = ['nome', 'descricao']
-    list_filter = ['tributacao', 'padrao', 'ativo']
+    list_display = ['organizacao', 'nome', 'tributacao', 'padrao', 'ativo']
+    list_display_links = ['nome']
+    search_fields = ['organizacao__nome', 'nome', 'descricao']
+    list_filter = ['organizacao', 'tributacao', 'padrao', 'ativo']
     readonly_fields = ['criado_em', 'atualizado_em']
     inlines = [PlanoTarefaItemInline]
     fieldsets = [
         ('Dados principais', {
-            'fields': ['nome', 'tributacao', 'descricao', 'padrao', 'ativo']
+            'fields': ['organizacao', 'nome', 'tributacao', 'descricao', 'padrao', 'ativo']
         }),
         ('Origem', {
             'fields': ['baseado_em']
