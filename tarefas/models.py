@@ -325,6 +325,13 @@ class EmpresaTarefaAjuste(models.Model):
             )
         ]
 
+    def clean(self):
+        if self.empresa_id and self.tarefa_id:
+            if self.empresa.organizacao_id != self.tarefa.departamento.organizacao_id:
+                raise ValidationError({
+                    'tarefa': 'A tarefa deve pertencer à mesma organização da empresa.'
+                })
+
     def __str__(self):
         return f'{self.empresa} - {self.tarefa} ({self.get_tipo_ajuste_display()})'
 
