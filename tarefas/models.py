@@ -393,6 +393,13 @@ class OcorrenciaTarefa(models.Model):
             )
         ]
 
+    def clean(self):
+        if self.empresa_id and self.tarefa_id:
+            if self.empresa.organizacao_id != self.tarefa.departamento.organizacao_id:
+                raise ValidationError({
+                    'tarefa': 'A tarefa deve pertencer à mesma organização da empresa.'
+                })
+
     def data_referencia(self):
         if self.tarefa.natureza == Tarefa.Natureza.PRINCIPAL:
             return self.data_execucao
