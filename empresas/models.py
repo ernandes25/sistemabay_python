@@ -68,5 +68,10 @@ class Empresa(models.Model):
                     'plano_tarefas': 'O plano de tarefas deve pertencer à mesma organização da empresa.'
                 })
 
+            if self.tributacao != self.plano_tarefas.tributacao:
+                raise ValidationError({
+                    'plano_tarefas': 'O plano de tarefas deve ter a mesma tributação da empresa.'
+                })
+
     def __str__(self):
         return self.nome
