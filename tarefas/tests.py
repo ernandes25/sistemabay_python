@@ -30,6 +30,26 @@ class DepartamentoModelTests(TestCase):
         Departamento.objects.create(organizacao=organizacao_b, nome='Fiscal')
 
 
+class PlanoTarefaModelTests(TestCase):
+    def test_nao_permite_plano_de_origem_de_outra_organizacao(self):
+        organizacao_a = Organizacao.objects.create(nome='Organização A')
+        organizacao_b = Organizacao.objects.create(nome='Organização B')
+        plano_origem_b = PlanoTarefa.objects.create(
+            organizacao=organizacao_b,
+            nome='Plano de Origem B',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+        )
+        plano_a = PlanoTarefa(
+            organizacao=organizacao_a,
+            nome='Plano A',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+            baseado_em=plano_origem_b,
+        )
+
+        with self.assertRaises(ValidationError):
+            plano_a.full_clean()
+
+
 class PlanoTarefaItemModelTests(TestCase):
     def test_nao_permite_tarefa_de_outra_organizacao(self):
         organizacao_a = Organizacao.objects.create(nome='Organização A')

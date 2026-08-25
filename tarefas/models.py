@@ -250,6 +250,12 @@ class PlanoTarefa(models.Model):
         verbose_name_plural = 'Planos de tarefas'
 
     def clean(self):
+        if self.baseado_em_id and self.organizacao_id:
+            if self.baseado_em.organizacao_id != self.organizacao_id:
+                raise ValidationError({
+                    'baseado_em': 'O plano de origem deve pertencer à mesma organização.'
+                })
+
         if self.padrao:
             plano_padrao = PlanoTarefa.objects.filter(
                 organizacao=self.organizacao,
