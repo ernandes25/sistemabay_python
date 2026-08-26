@@ -248,6 +248,13 @@ class PlanoTarefa(models.Model):
         ordering = ['tributacao', 'nome']
         verbose_name = 'Plano de tarefas'
         verbose_name_plural = 'Planos de tarefas'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['organizacao', 'tributacao'],
+                condition=models.Q(padrao=True),
+                name='unique_plano_padrao_por_organizacao_tributacao',
+            ),
+        ]
 
     def clean(self):
         if self.baseado_em_id and self.organizacao_id:

@@ -49,6 +49,23 @@ class PlanoTarefaModelTests(TestCase):
         with self.assertRaises(ValidationError):
             plano_a.full_clean()
 
+    def test_nao_permite_dois_planos_padrao_na_mesma_organizacao_e_tributacao(self):
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        PlanoTarefa.objects.create(
+            organizacao=organizacao,
+            nome='Plano Padrão 1',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+            padrao=True,
+        )
+
+        with self.assertRaises(IntegrityError):
+            PlanoTarefa.objects.create(
+                organizacao=organizacao,
+                nome='Plano Padrão 2',
+                tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+                padrao=True,
+            )
+
 
 class PlanoTarefaItemModelTests(TestCase):
     def test_nao_permite_tarefa_de_outra_organizacao(self):
