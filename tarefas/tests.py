@@ -14,6 +14,7 @@ from tarefas.models import (
     Tarefa,
     TipoTarefa,
 )
+from tarefas.services import calcular_data_vencimento
 
 
 class DepartamentoModelTests(TestCase):
@@ -174,3 +175,37 @@ class OcorrenciaTarefaModelTests(TestCase):
 
         with self.assertRaises(ValidationError):
             ocorrencia.full_clean()
+
+
+class CalculoDatasTests(TestCase):
+    def test_calcula_vencimento_no_mes_seguinte(self):
+        competencia = date(2026, 1, 1)
+        tarefa = Tarefa(
+            tipo_dia_vencimento=Tarefa.TipoDiaVencimento.DIA_FIXO,
+            dia_vencimento=20,
+            meses_apos_competencia=Tarefa.MomentoCompetencia.MES_SEGUINTE,
+        )
+        vencimento_esperado = date(2026, 2, 20)
+        vencimento_calculado = calcular_data_vencimento(tarefa, competencia)
+        self.assertEqual(vencimento_calculado, vencimento_esperado)
+
+    def test_calcula_vencimento_no_ano_seguinte(self):
+        competencia = date(2026, 12, 1)
+        tarefa = Tarefa(
+            tipo_dia_vencimento=Tarefa.TipoDiaVencimento.DIA_FIXO,
+            dia_vencimento=10,
+            meses_apos_competencia=Tarefa.MomentoCompetencia.MES_SEGUINTE,
+        )
+        vencimento_esperado = date(2027, 1, 10)
+        vencimento_calculado = calcular_data_vencimento(tarefa, competencia)
+        self.assertEqual(vencimento_calculado, vencimento_esperado)
+
+    def test_calcula_ultimo_dia_do_mes(self):
+        competencia = date(2026, 1, 1)
+        tarefa = Tarefa(
+            tipo_dia_vencimento=Tarefa.TipoDiaVencimento.ULTIMO_DIA_MES,
+            meses_apos_competencia=Tarefa.MomentoCompetencia.MES_SEGUINTE,
+        )
+        vencimento_esperado = date(2026, 2, 28)
+        vencimento_calculado = calcular_data_vencimento(tarefa, competencia)
+        self.assertEqual(vencimento_calculado, vencimento_esperado)
