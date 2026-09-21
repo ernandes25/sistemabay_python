@@ -209,3 +209,16 @@ class CalculoDatasTests(TestCase):
         vencimento_esperado = date(2026, 2, 28)
         vencimento_calculado = calcular_data_vencimento(tarefa, competencia)
         self.assertEqual(vencimento_calculado, vencimento_esperado)
+
+    def test_calcula_ultimo_dia_util(self):
+        competencia = date(2026, 1, 1)
+        tarefa = Tarefa(
+            tipo_dia_vencimento=Tarefa.TipoDiaVencimento.ULTIMO_DIA_UTIL,
+            meses_apos_competencia=Tarefa.MomentoCompetencia.MES_SEGUINTE,
+            ajuste_dia_nao_util=Tarefa.AjusteDiaNaoUtil.ANTECIPAR,
+
+        )
+        vencimento_esperado = date(2026, 2, 27)
+        vencimento_calculado = calcular_data_vencimento(tarefa, competencia)
+        self.assertEqual(vencimento_calculado, vencimento_esperado)
+
