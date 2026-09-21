@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from tarefas.models import EmpresaTarefaAjuste
 from .models import Empresa, Organizacao
 
 
@@ -24,12 +26,22 @@ class OrganizacaoAdmin(admin.ModelAdmin):
     ]
 
 
+class EmpresaTarefaAjusteInline(admin.TabularInline):
+    model = EmpresaTarefaAjuste
+    extra = 0
+    can_delete = False
+    fields = ['tarefa', 'tipo_ajuste', 'ativo', 'observacao']
+    verbose_name = 'Ajuste de tarefa'
+    verbose_name_plural = 'Ajustes de tarefas por empresa'
+
+
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
     list_display = ['nome', 'organizacao', 'cnpj', 'cidade', 'uf', 'tributacao', 'plano_tarefas']
     search_fields = ['nome', 'cnpj', 'cidade']
     list_filter = ['organizacao', 'tributacao', 'plano_tarefas', 'uf']
     readonly_fields = ['criado_em', 'atualizado_em']
+    inlines = [EmpresaTarefaAjusteInline]
     fieldsets = [
         ('Dados principais', {
             'fields': ['organizacao', 'nome', 'cnpj', 'tributacao', 'plano_tarefas']

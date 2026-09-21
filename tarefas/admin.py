@@ -1,5 +1,7 @@
 from django.contrib import admin
+from django.contrib import messages
 from django import forms
+
 from .models import (
     Departamento,
     EmpresaTarefaAjuste,
@@ -233,6 +235,52 @@ class EmpresaTarefaAjusteAdmin(admin.ModelAdmin):
             'fields': ['criado_em', 'atualizado_em']
         }),
     ]
+    def delete_view(self, request, object_id, extra_context=None):
+        ajuste = self.get_object(request, object_id)
+        tarefa = ajuste.tarefa
+
+        if tarefa.natureza == Tarefa.Natureza.SUBTAREFA:
+            quantidade = tarefa.tarefa_principal.subtarefas.count()
+
+            if quantidade == 1:
+                self.message_user(
+                    request,
+                    f'O aviso: a tarefa principal {tarefa.tarefa_principal} '
+                    f'sera removida junto, pois ficara sem subtarefas.',
+                    level=messages.WARNING,
+                )
+   
+        return super().delete_view(request, object_id, extra_context)
+
+    def delete_queryset(self, request, queryset):
+        ajustes_para_remover = list(queryset)
+
+        for ajuste in ajustes_para_remover:
+            if ajuste.tarefa.natureza == Tarefa.Natureza.PRINCIPAL:
+                for subtarefa in ajuste.tarefa.subtarefas.all():
+                    for dependente in EmpresaTarefaAjuste.objects.filter(
+                        empresa=ajuste.empresa,
+                        tarefa=subtarefa,
+                    ):
+                        if dependente not in ajustes_para_remover:
+                            ajustes_para_remover.append(dependente)
+
+        for ajuste in list(ajustes_para_remover):
+            if ajuste.tarefa.natureza == Tarefa.Natureza.SUBTAREFA:
+                principal = ajuste.tarefa.tarefa_principal
+                restantes = EmpresaTarefaAjuste.objects.filter(
+                    empresa=ajuste.empresa,
+                    tarefa__in=principal.subtarefas.all(),
+                    tipo_ajuste=EmpresaTarefaAjuste.TipoAjuste.REMOVER,
+                ).exclude(pk__in=[item.pk for item in ajustes_para_remover])
+
+                if not restantes.exists():
+                    principal_do_ajuste = EmpresaTarefaAjuste.objects.filter(
+                        empresa=ajuste.empresa,
+                        tarefa=principal,
+                    ).first()
+                    if principal_do_ajuste and principal_do_ajuste not in ajustes_para_remover:
+                        ajustes_para_remover.append(principal_do_ajuste)
 
 
 @admin.register(OcorrenciaTarefa)
