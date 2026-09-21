@@ -3,6 +3,7 @@ from datetime import date, timedelta
 
 from tarefas.dias_uteis import dia_util_anterior, dia_util_posterior
 from tarefas.models import (
+    EmpresaTarefaAjuste,
     PlanoTarefaItem,
     Tarefa,
 )
@@ -73,4 +74,22 @@ def buscar_tarefas_da_empresa(empresa):
         plano=empresa.plano_tarefas,
         ativo=True
     )
-    return itens_do_plano
+
+    tarefas = []
+
+    for item in itens_do_plano:
+        tarefas.append(item.tarefa)
+        tarefas.extend(item.tarefa.subtarefas.all())
+
+    ajustes = EmpresaTarefaAjuste.objects.filter(empresa=empresa, ativo=True)
+
+    for ajuste in ajustes:
+        if ajuste.tipo_ajuste == EmpresaTarefaAjuste.TipoAjuste.ADICIONAR:
+            tarefas.append(ajuste.tarefa)
+        else:
+            if ajuste.tarefa in tarefas:
+                tarefas.remove(ajuste.tarefa)
+            for subtarefa in ajuste.tarefa.subtarefas.all():
+                if subtarefa in tarefas:
+                    tarefas.remove(subtarefa)
+    return tarefas 

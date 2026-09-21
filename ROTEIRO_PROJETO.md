@@ -140,6 +140,15 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 - Ocorrencias de tarefas registradas no admin do Django.
 - Status gravados definidos: Pendente, Concluida e Cancelada.
 - Status Atrasada definido como calculado automaticamente pelo sistema.
+- Biblioteca `holidays` instalada e registrada no `requirements.txt`.
+- Arquivo `tarefas/dias_uteis.py` criado, com as funcoes `eh_feriado`, `eh_dia_util`, `dia_util_anterior` e `dia_util_posterior`.
+- Funcao `calcular_data_vencimento` completa, com ultimo dia do mes, ultimo dia util e ajuste de dia nao util.
+- Funcao `calcular_data_execucao` criada, para o prazo interno de execucao das tarefas principais.
+- Funcao `calcular_data_alerta` criada, usando a execucao para tarefa principal e o vencimento para tarefa simples ou subtarefa.
+- Funcao `buscar_tarefas_da_empresa` alterada para devolver tarefas, incluindo as subtarefas das tarefas principais do plano, e aplicando os ajustes individuais de adicionar e remover.
+- `Tarefa.clean()` passa a exigir pelo menos uma subtarefa quando a tarefa principal ja existe no banco.
+- Correcao do calculo de mes quando a competencia passa de um ano, como dezembro com doze meses depois.
+- Testes de calculo de datas, de execucao, de alerta e de busca de tarefas da empresa.
 
 ## 10. Estrutura geral do Django
 
@@ -191,6 +200,34 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 - Para tarefa principal, a data de referencia da ocorrencia e a data de execucao interna.
 - Para tarefa simples ou subtarefa, a data de referencia da ocorrencia e a data de vencimento oficial.
 
+## 11.2 Diferenca entre tarefa simples e subtarefa
+
+As duas podem ser baixadas pelo usuario, mas nao sao a mesma coisa.
+
+- Tarefa simples: existe sozinha, nao tem tarefa principal e pode ser adicionada diretamente ao plano.
+- Subtarefa: existe sempre dentro de uma tarefa principal, e obrigatorio informar a tarefa principal dela.
+- Subtarefa nao pode ser adicionada diretamente ao plano; ela entra no plano por meio da tarefa principal.
+- Apenas a tarefa principal controla execucao interna e possui prazo interno de execucao.
+- Tarefa simples e subtarefa possuem vencimento oficial proprio.
+- No banco, as tres naturezas sao valores separados: Tarefa principal, Tarefa simples e Subtarefa.
+
+## 11.3 Regras de remocao de tarefas de uma empresa
+
+Estas regras valem para os ajustes individuais por empresa.
+
+- O usuario pode remover a tarefa principal. Nesse caso, o sistema remove a tarefa principal e todas as subtarefas dela de uma so vez, para que ele nao precise remover subtarefa por subtarefa.
+- O usuario tambem pode remover apenas uma subtarefa especifica, quando a empresa nao tem aquela obrigacao. Exemplo: empresa que so tem retirada de pro-labore nao gera guia de FGTS.
+- Se o usuario remover a ultima subtarefa de uma tarefa principal, o sistema avisa e remove tambem a tarefa principal, porque ela ficaria sem subtarefas.
+- Nos casos de remocao da tarefa principal ou da ultima subtarefa, o usuario deve ser avisado antes da remocao ser efetivada.
+- Remover uma subtarefa que nao e a ultima nao altera a tarefa principal.
+
+## 11.4 Regras de adicao de tarefas de uma empresa
+
+- Ao adicionar uma tarefa principal como ajuste individual, e obrigatorio informar pelo menos uma subtarefa.
+- Uma tarefa principal nunca deve existir sem pelo menos uma subtarefa.
+- Ao salvar a tarefa principal pela primeira vez, ela ainda nao possui subtarefas, por isso a exigencia so e verificada a partir do momento em que a tarefa ja existe no banco.
+- Tarefa simples e subtarefa podem ser adicionadas como ajuste individual sem exigencia extra.
+
 ## 12. Ordem recomendada de implantacao
 
 1. Preparar ambiente Python.
@@ -220,9 +257,28 @@ Este arquivo sera usado como mapa de estudo e implantacao do projeto. A ideia e 
 25. Criar controle de baixa/conclusao das subtarefas.
 26. Criar reabertura de ocorrencias concluidas.
 
+Situacao atual desta lista:
+
+- Itens 1 a 23 concluidos.
+- Item 24 em andamento: as funcoes de calculo de datas, a busca de tarefas da empresa com subtarefas e ajustes e as regras de principal com subtarefas ja estao prontas; falta a funcao que cria as ocorrencias.
+- Itens 25 e 26 ainda nao iniciados.
+
 ## 13. Proximo passo atual
 
-- Criar a logica que calcula datas de execucao, vencimento e alerta.
+Concluido:
+
+- Logica que calcula datas de vencimento, de execucao e de alerta.
+- Tratamento de ultimo dia do mes e de ultimo dia util.
+- Ajuste de data que cai em dia nao util: manter, antecipar ou prorrogar.
+- Funcoes auxiliares de feriados e dias uteis no arquivo `tarefas/dias_uteis.py`, usando a biblioteca `holidays` com feriados nacionais do Brasil.
+- `Tarefa.clean()` passa a exigir pelo menos uma subtarefa quando a tarefa principal ja existe no banco.
+- `buscar_tarefas_da_empresa` passa a devolver tarefas, incluindo as subtarefas de cada tarefa principal do plano, e ja aplica os ajustes individuais de adicionar e remover.
+
+Proximos passos:
+
+- Aplicar as regras de remocao em grupo no admin de ajustes: remover a tarefa principal remove junto as subtarefas dela, com aviso ao usuario.
+- Avisar e remover a tarefa principal quando a ultima subtarefa dela for removida.
+- Exigir pelo menos uma subtarefa ao adicionar uma tarefa principal como ajuste individual.
 - Criar uma forma de gerar ocorrencias de tarefas por empresa e competencia.
 - Testar ocorrencias geradas para tarefa principal, tarefa simples e subtarefa.
 

@@ -164,10 +164,15 @@ class Tarefa(models.Model):
         return self.get_natureza_display()
 
     def clean(self):
-        if self.tarefa_principal_id and self.tarefa_principal_id == self.pk:
+        if (
+            self.natureza == self.Natureza.PRINCIPAL
+            and self.pk
+            and not self.subtarefas.exists()
+        ):
             raise ValidationError({
-                'tarefa_principal': 'Uma tarefa nao pode ser principal dela mesma.'
+                'natureza': 'Uma tarefa principal precisa de pelo menos uma subtarefa.'
             })
+
 
         if self.natureza == self.Natureza.SUBTAREFA and not self.tarefa_principal_id:
             raise ValidationError({

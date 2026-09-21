@@ -15,6 +15,7 @@ from tarefas.models import (
     TipoTarefa,
 )
 from tarefas.services import (
+    buscar_tarefas_da_empresa,
     calcular_data_alerta,
     calcular_data_execucao,
     calcular_data_vencimento,
@@ -181,6 +182,93 @@ class OcorrenciaTarefaModelTests(TestCase):
             ocorrencia.full_clean()
 
 
+class TarefaPrincipalComSubtarefaTests(TestCase):
+    def test_permite_salvar_tarefa_principal_nova_sem_subtarefa(self):
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        departamento = Departamento.objects.create(
+            organizacao=organizacao,
+            nome='Pessoal',
+        )
+        tipo = TipoTarefa.objects.create(nome='Folha de Pagamento')
+        principal = Tarefa.objects.create(
+            nome='Folha de Pagamento',
+            natureza=Tarefa.Natureza.PRINCIPAL,
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            controla_execucao=True,
+            dia_execucao=5,
+        )
+
+        self.assertIsNotNone(principal.pk)
+
+    def test_nao_permite_tarefa_principal_sem_subtarefa(self):
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        departamento = Departamento.objects.create(
+            organizacao=organizacao,
+            nome='Pessoal',
+        )
+        tipo = TipoTarefa.objects.create(nome='Folha de Pagamento')
+        principal = Tarefa.objects.create(
+            nome='Folha de Pagamento',
+            natureza=Tarefa.Natureza.PRINCIPAL,
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            controla_execucao=True,
+            dia_execucao=5,
+        )
+
+        with self.assertRaises(ValidationError):
+            principal.full_clean()
+
+    def test_permite_tarefa_principal_com_subtarefa(self):
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        departamento = Departamento.objects.create(
+            organizacao=organizacao,
+            nome='Pessoal',
+        )
+        tipo = TipoTarefa.objects.create(nome='Folha de Pagamento')
+        principal = Tarefa.objects.create(
+            nome='Folha de Pagamento',
+            natureza=Tarefa.Natureza.PRINCIPAL,
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            controla_execucao=True,
+            dia_execucao=5,
+        )
+        Tarefa.objects.create(
+            nome='Calcular folha',
+            natureza=Tarefa.Natureza.SUBTAREFA,
+            tarefa_principal=principal,
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            dia_vencimento=10,
+        )
+
+        principal.full_clean()
+
+    def test_nao_exige_subtarefa_de_tarefa_simples(self):
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        departamento = Departamento.objects.create(
+            organizacao=organizacao,
+            nome='Fiscal',
+        )
+        tipo = TipoTarefa.objects.create(nome='Apuração Fiscal')
+        simples = Tarefa.objects.create(
+            nome='Enviar DAS',
+            natureza=Tarefa.Natureza.SIMPLES,
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            dia_vencimento=20,
+        )
+
+        simples.full_clean()
+
+
 class CalculoDatasTests(TestCase):
     def test_calcula_vencimento_no_mes_seguinte(self):
         competencia = date(2026, 1, 1)
@@ -262,3 +350,97 @@ class CalculoDatasTests(TestCase):
         alerta_esperado = date(2026, 1, 7)
         alerta_calculado = calcular_data_alerta(tarefa, competencia)
         self.assertEqual(alerta_calculado, alerta_esperado)
+
+
+class BuscarTarefasDaEmpresaTests(TestCase):
+    def test_devolve_as_tarefas_do_plano_da_empresa(self):
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        departamento = Departamento.objects.create(
+            organizacao=organizacao,
+            nome='Fiscal',
+        )
+        tipo = TipoTarefa.objects.create(nome='Apuração Fiscal')
+        tarefa = Tarefa.objects.create(
+            nome='Apuração Fiscal',
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            dia_vencimento=10,
+        )
+        plano = PlanoTarefa.objects.create(
+            organizacao=organizacao,
+            nome='Plano Teste',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+        )
+        PlanoTarefaItem.objects.create(plano=plano, tarefa=tarefa)
+        empresa = Empresa.objects.create(
+            organizacao=organizacao,
+            nome='Empresa Teste',
+            cnpj='11.111.111/0001-11',
+            logradouro='Rua Teste',
+            numero='100',
+            bairro='Centro',
+            cidade='Cidade Teste',
+            uf='SP',
+            cep='00000-000',
+            telefone_whatsapp='11999999999',
+            email='empresa@exemplo.com',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+            plano_tarefas=plano,
+        )
+
+        tarefas = buscar_tarefas_da_empresa(empresa)
+
+        self.assertEqual(list(tarefas), [tarefa])
+
+    def test_inclui_as_subtarefas_da_tarefa_principal(self):
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        departamento = Departamento.objects.create(
+            organizacao=organizacao,
+            nome='Pessoal',
+        )
+        tipo = TipoTarefa.objects.create(nome='Folha de Pagamento')
+        principal = Tarefa.objects.create(
+            nome='Folha de Pagamento',
+            natureza=Tarefa.Natureza.PRINCIPAL,
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            controla_execucao=True,
+            dia_execucao=5,
+        )
+        subtarefa = Tarefa.objects.create(
+            nome='Calcular folha',
+            natureza=Tarefa.Natureza.SUBTAREFA,
+            tarefa_principal=principal,
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            dia_vencimento=10,
+        )
+        plano = PlanoTarefa.objects.create(
+            organizacao=organizacao,
+            nome='Plano Teste',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+        )
+        PlanoTarefaItem.objects.create(plano=plano, tarefa=principal)
+        empresa = Empresa.objects.create(
+            organizacao=organizacao,
+            nome='Empresa Teste',
+            cnpj='22.222.222/0001-22',
+            logradouro='Rua Teste',
+            numero='100',
+            bairro='Centro',
+            cidade='Cidade Teste',
+            uf='SP',
+            cep='00000-000',
+            telefone_whatsapp='11999999999',
+            email='empresa@exemplo.com',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+            plano_tarefas=plano,
+        )
+
+        tarefas = buscar_tarefas_da_empresa(empresa)
+
+        self.assertEqual(list(tarefas), [principal, subtarefa])
+        
