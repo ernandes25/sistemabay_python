@@ -14,7 +14,11 @@ from tarefas.models import (
     Tarefa,
     TipoTarefa,
 )
-from tarefas.services import calcular_data_vencimento
+from tarefas.services import (
+    calcular_data_alerta,
+    calcular_data_execucao,
+    calcular_data_vencimento,
+)
 
 
 class DepartamentoModelTests(TestCase):
@@ -222,3 +226,39 @@ class CalculoDatasTests(TestCase):
         vencimento_calculado = calcular_data_vencimento(tarefa, competencia)
         self.assertEqual(vencimento_calculado, vencimento_esperado)
 
+    def test_calcula_data_execucao(self):
+        competencia = date(2026, 1, 1)
+        tarefa = Tarefa(
+            tipo_dia_execucao=Tarefa.TipoDiaVencimento.DIA_FIXO,
+            dia_execucao=15,
+            meses_apos_competencia_execucao=Tarefa.MomentoCompetencia.PROPRIA_COMPETENCIA,
+        )
+        execucao_esperada = date(2026, 1, 15)
+        execucao_calculada = calcular_data_execucao(tarefa, competencia)
+        self.assertEqual(execucao_calculada, execucao_esperada)
+
+    def test_calcula_alerta_de_tarefa_simples(self):
+        competencia = date(2026, 1, 1)
+        tarefa = Tarefa(
+            natureza=Tarefa.Natureza.SIMPLES,
+            tipo_dia_vencimento=Tarefa.TipoDiaVencimento.DIA_FIXO,
+            dia_vencimento=20,
+            meses_apos_competencia=Tarefa.MomentoCompetencia.MES_SEGUINTE,
+            dias_antecedencia_alerta=5,
+        )
+        alerta_esperado = date(2026, 2, 15)
+        alerta_calculado = calcular_data_alerta(tarefa, competencia)
+        self.assertEqual(alerta_calculado, alerta_esperado)
+
+    def test_calcula_alerta_de_tarefa_principal(self):
+        competencia = date(2026, 1, 1)
+        tarefa = Tarefa(
+            natureza=Tarefa.Natureza.PRINCIPAL,
+            tipo_dia_execucao=Tarefa.TipoDiaVencimento.DIA_FIXO,
+            dia_execucao=10,
+            meses_apos_competencia_execucao=Tarefa.MomentoCompetencia.PROPRIA_COMPETENCIA,
+            dias_antecedencia_alerta_execucao=3,
+        )
+        alerta_esperado = date(2026, 1, 7)
+        alerta_calculado = calcular_data_alerta(tarefa, competencia)
+        self.assertEqual(alerta_calculado, alerta_esperado)
