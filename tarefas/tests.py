@@ -19,6 +19,7 @@ from tarefas.services import (
     calcular_data_alerta,
     calcular_data_execucao,
     calcular_data_vencimento,
+    gerar_ocorrencias_da_competencia,
 )
 
 
@@ -77,7 +78,8 @@ class PlanoTarefaItemModelTests(TestCase):
     def test_nao_permite_tarefa_de_outra_organizacao(self):
         organizacao_a = Organizacao.objects.create(nome='Organização A')
         organizacao_b = Organizacao.objects.create(nome='Organização B')
-        departamento_a = Departamento.objects.create(organizacao=organizacao_a, nome='Fiscal')
+        departamento_a = Departamento.objects.create(
+            organizacao=organizacao_a, nome='Fiscal')
         tipo = TipoTarefa.objects.create(nome='Apuração Fiscal')
         tarefa_a = Tarefa.objects.create(
             nome='Apuração Fiscal',
@@ -443,4 +445,163 @@ class BuscarTarefasDaEmpresaTests(TestCase):
         tarefas = buscar_tarefas_da_empresa(empresa)
 
         self.assertEqual(list(tarefas), [principal, subtarefa])
+
+
+class GerarOcorrenciasDaCompetenciaTests(TestCase):
+    def test_gera_as_ocorrencias_da_empresa(self):
+      
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        departamento = Departamento.objects.create(
+            organizacao=organizacao,
+            nome='Fiscal',
+        )
+
+        tipo = TipoTarefa.objects.create(nome='Apuração Fiscal')
+        tarefa = Tarefa.objects.create(
+            nome='Apuração Fiscal',
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            dia_vencimento=10,
+        )
+        plano = PlanoTarefa.objects.create(
+            organizacao=organizacao,
+            nome='Plano Teste',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+        )
+        PlanoTarefaItem.objects.create(plano=plano, tarefa=tarefa)
+        empresa = Empresa.objects.create(
+            organizacao=organizacao,
+            nome='Empresa Teste',
+            cnpj='33.333.333/0001-33',
+            logradouro='Rua Teste',
+            numero='100',
+            bairro='Centro',
+            cidade='Cidade Teste',
+            uf='SP',
+            cep='00000-000',
+            telefone_whatsapp='11999999999',
+            email='empresa@exemplo.com',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+            plano_tarefas=plano,
+        )
+
+        competencia = date(2026, 9, 1)
+        criadas = gerar_ocorrencias_da_competencia(empresa, competencia)
+
+        self.assertEqual(criadas, 1)
+        self.assertEqual(OcorrenciaTarefa.objects.count(), 1)
+
+
+    def test_nao_duplica_ocorrencia_da_mesma_competencia(self):
+      
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        departamento = Departamento.objects.create(
+            organizacao=organizacao,
+            nome='Fiscal',
+        )
+
+        tipo = TipoTarefa.objects.create(nome='Apuração Fiscal')
+        tarefa = Tarefa.objects.create(
+            nome='Apuração Fiscal',
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            dia_vencimento=10,
+        )
+        plano = PlanoTarefa.objects.create(
+            organizacao=organizacao,
+            nome='Plano Teste',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+        )
+        PlanoTarefaItem.objects.create(plano=plano, tarefa=tarefa)
+        empresa = Empresa.objects.create(
+            organizacao=organizacao,
+            nome='Empresa Teste',
+            cnpj='44.444.444/0001-44',
+            logradouro='Rua Teste',
+            numero='100',
+            bairro='Centro',
+            cidade='Cidade Teste',
+            uf='SP',
+            cep='00000-000',
+            telefone_whatsapp='11999999999',
+            email='empresa@exemplo.com',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+            plano_tarefas=plano,
+        )
+
+        competencia = date(2026, 9, 1)
+        primeira_vez = gerar_ocorrencias_da_competencia(empresa, competencia)
+        segunda_vez = gerar_ocorrencias_da_competencia(empresa, competencia)
+
+        self.assertEqual(primeira_vez, 1)
+        self.assertEqual(segunda_vez, 0)
+        self.assertEqual(OcorrenciaTarefa.objects.count(), 1)
+
+    def test_gera_ocorrencia_de_tarefa_principal_com_execucao(self):
+        organizacao = Organizacao.objects.create(nome='Organização Teste')
+        departamento = Departamento.objects.create(
+            organizacao=organizacao,
+            nome='Pessoal',
+        )
+        tipo = TipoTarefa.objects.create(nome='Folha de Pagamento')
+
+        principal = Tarefa.objects.create(
+            nome='Folha de Pagamento',
+            natureza=Tarefa.Natureza.PRINCIPAL,
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            controla_execucao=True,
+            tipo_dia_execucao=Tarefa.TipoDiaVencimento.DIA_FIXO,
+            dia_execucao=5,
+            meses_apos_competencia_execucao=Tarefa.MomentoCompetencia.PROPRIA_COMPETENCIA,
+            dias_antecedencia_alerta_execucao=2,
+            dia_vencimento=10,
+            meses_apos_competencia=Tarefa.MomentoCompetencia.PROPRIA_COMPETENCIA,
+        )
+        subtarefa = Tarefa.objects.create(
+            nome='Calcular folha',
+            natureza=Tarefa.Natureza.SUBTAREFA,
+            tarefa_principal=principal,
+            departamento=departamento,
+            tipo=tipo,
+            periodicidade=Tarefa.Periodicidade.MENSAL,
+            dia_vencimento=10,
+        )
+
+        plano = PlanoTarefa.objects.create(
+            organizacao=organizacao,
+            nome='Plano Teste',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+        )
+        PlanoTarefaItem.objects.create(plano=plano, tarefa=principal)
+        empresa = Empresa.objects.create(
+            organizacao=organizacao,
+            nome='Empresa Teste',
+            cnpj='55.555.555/0001-55',
+            logradouro='Rua Teste',
+            numero='100',
+            bairro='Centro',
+            cidade='Cidade Teste',
+            uf='SP',
+            cep='00000-000',
+            telefone_whatsapp='11999999999',
+            email='empresa@exemplo.com',
+            tributacao=Empresa.Tributacao.SIMPLES_NACIONAL,
+            plano_tarefas=plano,
+        )
+
+        competencia = date(2026, 9, 1)
+        criadas = gerar_ocorrencias_da_competencia(empresa, competencia)
+
+        self.assertEqual(criadas, 2)
+        self.assertEqual(OcorrenciaTarefa.objects.count(), 2)
+
+        ocorrencia_principal = OcorrenciaTarefa.objects.get(tarefa=principal)
+        ocorrencia_subtarefa = OcorrenciaTarefa.objects.get(tarefa=subtarefa)
+
+        self.assertEqual(ocorrencia_principal.data_execucao, date(2026, 9, 5))
+        self.assertIsNone(ocorrencia_subtarefa.data_execucao)
         

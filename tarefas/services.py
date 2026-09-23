@@ -6,6 +6,7 @@ from tarefas.models import (
     EmpresaTarefaAjuste,
     PlanoTarefaItem,
     Tarefa,
+    OcorrenciaTarefa,
 )
 
 
@@ -92,4 +93,35 @@ def buscar_tarefas_da_empresa(empresa):
             for subtarefa in ajuste.tarefa.subtarefas.all():
                 if subtarefa in tarefas:
                     tarefas.remove(subtarefa)
-    return tarefas 
+    return tarefas
+
+
+def gerar_ocorrencias_da_competencia(empresa, competencia):
+    tarefas = buscar_tarefas_da_empresa(empresa)
+    criadas = 0
+
+    for tarefa in tarefas:
+        vencimento = calcular_data_vencimento(tarefa, competencia)
+        alerta = calcular_data_alerta(tarefa, competencia)
+
+        if tarefa.natureza == Tarefa.Natureza.PRINCIPAL:
+            execucao = calcular_data_execucao(tarefa, competencia)
+        else:
+            execucao = None
+
+        alerta = calcular_data_alerta(tarefa, competencia)
+
+        ocorrencia, criada = OcorrenciaTarefa.objects.get_or_create(
+            empresa=empresa,
+            tarefa=tarefa,
+            competencia=competencia,
+            defaults={
+                'data_execucao': execucao,
+                'data_vencimento': vencimento,
+                'data_alerta': alerta,
+            },
+        )
+        if criada:
+            criadas = criadas + 1
+
+    return criadas
